@@ -1,0 +1,74 @@
+version: '3.8'
+
+# We are using 'alpine' Linux because it is incredibly lightweight (~5MB).
+# The command 'tail -f /dev/null' just keeps the container running indefinitely in the background.
+
+services:
+  # --- 2 HEALTHY NODES ---
+  sap-prd-01:
+    image: alpine:latest
+    container_name: sap-prd-01
+    command: tail -f /dev/null
+    labels:
+      sap_role: "HANA DB"
+      sap_cloud: "AWS"
+      sap_health: "Healthy"
+      sap_patches: "0"
+      sap_cert_days: "120"
+
+  sap-app-02:
+    image: alpine:latest
+    container_name: sap-app-02
+    command: tail -f /dev/null
+    labels:
+      sap_role: "App Server"
+      sap_cloud: "Azure"
+      sap_health: "Healthy"
+      sap_patches: "0"
+      sap_cert_days: "85"
+
+  # --- 2 WARNING NODES ---
+  sap-web-03:
+    image: alpine:latest
+    container_name: sap-web-03
+    command: tail -f /dev/null
+    labels:
+      sap_role: "Web-Dispatcher"
+      sap_cloud: "AWS"
+      sap_health: "Warning"
+      sap_patches: "12"
+      sap_cert_days: "25"
+
+  sap-prd-04:
+    image: alpine:latest
+    container_name: sap-prd-04
+    command: tail -f /dev/null
+    labels:
+      sap_role: "HANA DB"
+      sap_cloud: "GCP"
+      sap_health: "Warning"
+      sap_patches: "5"
+      sap_cert_days: "40"
+
+  # --- 2 CRITICAL NODES ---
+  sap-app-05:
+    image: alpine:latest
+    container_name: sap-app-05
+    command: tail -f /dev/null
+    labels:
+      sap_role: "App Server"
+      sap_cloud: "Azure"
+      sap_health: "Critical"
+      sap_patches: "35"
+      sap_cert_days: "-2" # Expired!
+
+  sap-web-06:
+    image: alpine:latest
+    container_name: sap-web-06
+    command: tail -f /dev/null
+    labels:
+      sap_role: "Web-Dispatcher"
+      sap_cloud: "GCP"
+      sap_health: "Critical"
+      sap_patches: "0"
+      sap_cert_days: "-15" # Expired!
