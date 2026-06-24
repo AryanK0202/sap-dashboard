@@ -1,5 +1,5 @@
 System ID,Role,Cloud Provider,Health Status,Last Ansible Sync,Last Playbook Run,Pending OS Patches,Cert Expiry (Days)
-SAP-APP-05,App Server,Azure,Critical,Just now,Failed,35,-2
+SAP-APP-05,App Server,Azure,Healthy,Just now,Success,0,-2
 SAP-APP-02,App Server,Azure,Healthy,Just now,Success,0,85
 SAP-PRD-01,HANA DB,AWS,Healthy,Just now,Success,0,120
 SAP-WEB-03,Web-Dispatcher,AWS,Warning,Just now,Success,24,25
