@@ -2,7 +2,7 @@
 
 This prototype is designed to visualize and manage a massive SAP cloud landscape (AWS, Azure, GCP) by integrating infrastructure monitoring with actionable Ansible automation.
 
- # Overview
+# Overview
 
 Managing an enterprise-grade SAP landscape (Virtual Machines, HANA DBs, Web-dispatchers) across multiple hyperscalers requires an exception-based monitoring approach. This dashboard filters out the noise, highlighting systems that require human intervention for:
 
@@ -42,29 +42,22 @@ cd sap-ansible-ops-dashboard
 ```
 2. Set Up the Virtual Environment
 
-It's highly recommended to use a virtual environment to manage dependencies.
+It's highly recommended to use a virtual environment to manage dependencies. 
 
-# Windows
-
+First connect to the WSL, then run:
 ```bash
-py -m venv .venv
+python -m venv .venv
 .venv\Scripts\activate
 ```
+3. Also make sure you have Docker Desktop installed 
 
-# Future Roadmap (Production Integration)
+# Automation
+## Since this is a prototype dasbaord, we are going to simulate automation
 
-While this is a presentation prototype, the architecture is designed to scale:
-
-API Integration: Replace the static CSV data layer with API calls to a centralized database populated by Ansible fact-gathering playbooks.
-
-Webhooks: Connect the "Run Playbook" buttons to an automation controller (like AWX/Ansible Tower) via REST APIs to trigger real-time targeted remediation.
-
-Containerization: Package the frontend using Docker for high availability.
-
-# To Simulate automation run these scripts
-
+To do so, run these commands:
 ```bash
 docker exec sap-web-03 sh -c "echo '24' > /tmp/pending_patches.txt"
 
 docker stop sap-app-05
 ```
+These commands break the docker containers
