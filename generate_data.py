@@ -1,43 +1,52 @@
 import pandas as pd
-import random
+import docker
+import datetime
 
-#Core conig vectors that match a real SAP landscape
-roles = ['HANA DB', 'App server', 'Web Dispatcher']
-clouds = ['AWS', 'Azure', 'GCP']
-health_states = ['Healthy', 'Warning', 'Critical']
-ansible_states = ['Success', 'Failed']
+def sync_docker_inventory():
+    print("🔄 Connecting to local Docker daemon...")
+    try:
+        # Connect to Docker (works natively in WSL)
+        client = docker.from_env()
+        containers = client.containers.list()
+    except Exception as e:
+        print(f"❌ Failed to connect to Docker. Is Docker running? Error: {e}")
+        return
 
-data = []
+    data = []
+    
+    for container in containers:
+        labels = container.labels
+        
+        # Only process containers that have our 'sap_role' label
+        if 'sap_role' in labels:
+            system_id = container.name.upper()
+            health = labels.get('sap_health', 'Unknown')
+            
+            # Simulate Ansible logic based on the health label
+            ansible_status = 'Success' if health == 'Healthy' else 'Failed' if health == 'Critical' else 'Success'
+            
+            # Add to our dataset
+            data.append({
+                'System ID': system_id,
+                'Role': labels.get('sap_role', 'Unknown'),
+                'Cloud Provider': labels.get('sap_cloud', 'Unknown'),
+                'Health Status': health,
+                'Last Ansible Sync': "Just now",  # Since we are querying live
+                'Last Playbook Run': ansible_status,
+                'Pending OS Patches': int(labels.get('sap_patches', 0)),
+                'Cert Expiry (Days)': int(labels.get('sap_cert_days', 0))
+            })
 
-for i in range(1, 101):
-    #Determine realistic distribution weights
-    health = random.choices(health_states, weights = [85, 10, 5])[0]
+    if not data:
+        print("⚠️ No SAP containers found. Did you run 'docker compose up -d'?")
+        return
 
-    #Assign Ansible status
-    if health == 'Critical':
-        ansible = 'Failed'
-        sync = 'Offline'
-        patches = random.randint(15, 40)
-    elif health == 'Warning':
-        ansible = 'Warning'
-        sync = f"{random.randint(1, 4)}h ago"
-        patches = random.randint(5, 20)
-    else:
-        ansible = 'Success'
-        sync = f"{random.randint(2, 45)}m ago"
-        patches = 0
-
-    data.append({
-        'System ID': f"SAP-{random.choice(['PRD', 'QAS', 'DEV'])}-{i:02d}",
-        'Role': random.choice(roles),
-        'Cloud Provider': random.choice(clouds),
-        'Health Status': health,
-        'Last Ansible Sync': sync,
-        'Last Playbook Run': ansible,
-        'Pending OS Patches': patches,
-        'Cert Expiry (Days)': random.randint(-2, 120) if health != 'Healthy' else random.randint(31, 365)
-    })
-
+    # Export to CSV for the Streamlit dashboard to read
     df = pd.DataFrame(data)
-    df.to_csv('sap_nodes.csv', index = False)
-    print("Sucessfully generated sap_nodes.csv")
+    df.to_csv('sap_nodes.csv', index=False)
+    
+    print(f"✅ Successfully synced {len(data)} nodes from Docker to sap_nodes.csv!")
+    print(df.to_string(index=False))
+
+if __name__ == "__main__":
+    sync_docker_inventory()
