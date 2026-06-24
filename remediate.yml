@@ -1,0 +1,22 @@
+---
+- name: SAP Node Automated Remediation
+  # 'all' means it will run against whatever target we pass via the command line
+  hosts: all
+  connection: docker
+  gather_facts: no
+  
+  tasks:
+    - name: STEP 1 - Ensure the server (container) is running
+      # This runs on your WSL machine to start the container if it's down
+      delegate_to: localhost
+      command: docker start {{ inventory_hostname }}
+      ignore_errors: yes
+
+    - name: Wait for system services to boot
+      pause:
+        seconds: 2
+
+    - name: STEP 2 - Apply OS Patches
+      # This executes INSIDE the container to delete our dummy pending updates file
+      raw: rm -f /tmp/pending_patches.txt
+      ignore_errors: yes
