@@ -36,7 +36,7 @@ Git
 
 1. Clone the Repository
 
-git clone [https://github.com/AryanK0202/sap-ansible-ops-dashboard.git](https://github.com/AryanK0202/sap-ansible-ops-dashboard.git)
+git clone [https://github.com/AryanK0202/sap-dashboard.git](https://github.com/AryanK0202/sap-dashboard.git)
 cd sap-ansible-ops-dashboard
 
 2. Set Up the Virtual Environment
@@ -47,40 +47,6 @@ It's highly recommended to use a virtual environment to manage dependencies.
 
 py -m venv .venv
 .venv\Scripts\activate
-
-# Mac/Linux
-
-python3 -m venv .venv
-source .venv/bin/activate
-
-3. Install Dependencies
-
-pip install streamlit pandas
-
-(Note: Be sure to save your environment via pip freeze > requirements.txt once installed).
-
-4. Generate the Mock Dataset
-
-Before running the dashboard, generate the simulated server infrastructure:
-
-python generate_data.py
-
-This will create a sap_nodes.csv file in your root directory containing 100 generated servers.
-
-5. Launch the Dashboard
-
-streamlit run app.py
-
-Your default web browser will automatically open and display the application (usually at http://localhost:8501).
-
-📁 Repository Structure
-
-sap-ansible-ops-dashboard/
-├── .gitignore # Ignores .venv and cached files
-├── README.md # Project documentation
-├── requirements.txt # Python dependencies (Streamlit, Pandas)
-├── generate_data.py # Script to build the mock SAP infrastructure dataset
-└── app.py # The main Streamlit dashboard application
 
 🔮 Future Roadmap (Production Integration)
 
