@@ -1,13 +1,13 @@
 import pandas as pd
 import docker
-import datetime
+import os
 
 def sync_docker_inventory():
     print("🔄 Connecting to local Docker daemon...")
     try:
-        # Connect to Docker (works natively in WSL)
+        # Connects natively to the Docker daemon running in WSL
         client = docker.from_env()
-        containers = client.containers.list()
+        containers = client.containers.list(all=True) # Get all containers, even stopped ones
     except Exception as e:
         print(f"❌ Failed to connect to Docker. Is Docker running? Error: {e}")
         return
@@ -20,20 +20,39 @@ def sync_docker_inventory():
         # Only process containers that have our 'sap_role' label
         if 'sap_role' in labels:
             system_id = container.name.upper()
-            health = labels.get('sap_health', 'Unknown')
+            role = labels.get('sap_role', 'Unknown')
+            cloud = labels.get('sap_cloud', 'Unknown')
             
-            # Simulate Ansible logic based on the health label
-            ansible_status = 'Success' if health == 'Healthy' else 'Failed' if health == 'Critical' else 'Success'
-            
+            # 1. Check if container is actually running (Simulate System Down)
+            if container.status != 'running':
+                health = 'Critical'
+                ansible_status = 'Failed'
+                patches = int(labels.get('sap_patches', 0))
+            else:
+                # 2. Check for our dummy "pending patches" file (Simulate Warning)
+                # We use docker exec to run a command inside the container
+                exit_code, output = container.exec_run("cat /tmp/pending_patches.txt")
+                
+                if exit_code == 0: # File exists!
+                    health = 'Warning'
+                    ansible_status = 'Success'
+                    # Read the number from the file, clean up whitespace
+                    patches = int(output.decode('utf-8').strip()) 
+                else:
+                    # System is running and no patch file exists
+                    health = 'Healthy'
+                    ansible_status = 'Success'
+                    patches = 0
+
             # Add to our dataset
             data.append({
                 'System ID': system_id,
-                'Role': labels.get('sap_role', 'Unknown'),
-                'Cloud Provider': labels.get('sap_cloud', 'Unknown'),
+                'Role': role,
+                'Cloud Provider': cloud,
                 'Health Status': health,
-                'Last Ansible Sync': "Just now",  # Since we are querying live
+                'Last Ansible Sync': "Just now", 
                 'Last Playbook Run': ansible_status,
-                'Pending OS Patches': int(labels.get('sap_patches', 0)),
+                'Pending OS Patches': patches,
                 'Cert Expiry (Days)': int(labels.get('sap_cert_days', 0))
             })
 
