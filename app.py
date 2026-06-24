@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import time
+import subprocess
 from generate_data import sync_docker_inventory
 
 # Set up the browser layout parameters
@@ -34,7 +35,7 @@ filtered_df = df[
     (df['Health Status'].isin(status_filter))
 ]
 
-# 3. Global Ansible Control - NOW CONNECTED TO DOCKER
+# 3. Global Ansible Control
 col_title, col_btn = st.columns([4, 1])
 with col_title:
     st.subheader("Global Automation Controls")
@@ -63,12 +64,28 @@ kpi4.metric("Certs Expiring < 30 Days", expiring_certs)
 
 st.markdown("---")
 
-# 5. Interactive Data Table
+# 5. Interactive Data Table (NOW WITH COLOR CODING)
 st.subheader("Fleet Inventory & Playbook Integration")
+
+# Function to apply CSS styling to the Health Status column
+def color_health_status(val):
+    if val == 'Critical':
+        return 'background-color: #ffcccc; color: #cc0000; font-weight: bold;'
+    elif val == 'Warning':
+        return 'background-color: #ffffcc; color: #b3b300; font-weight: bold;'
+    elif val == 'Healthy':
+        return 'background-color: #ccffcc; color: #008000; font-weight: bold;'
+    return ''
+
+# Apply the style to the dataframe. We use a try/except to handle different versions of Pandas
+try:
+    styled_df = filtered_df.style.map(color_health_status, subset=['Health Status'])
+except AttributeError:
+    styled_df = filtered_df.style.applymap(color_health_status, subset=['Health Status'])
 
 # Display a clean data table for the presentation
 st.dataframe(
-    filtered_df,
+    styled_df,
     column_config={
         "Pending OS Patches": st.column_config.NumberColumn(format="%d packages"),
         "Cert Expiry (Days)": st.column_config.NumberColumn(format="%d days left"),
@@ -97,14 +114,31 @@ if not filtered_df.empty:
             st.write(f"**Current Status:** {selected_node['Health Status']} | **Pending Patches:** {selected_node['Pending OS Patches']}")
         
         with col2:
-            if selected_node['Pending OS Patches'] > 0:
-                if st.button(f"🚀 Run batch_patch.yml on {target_system}", type="primary"):
-                    with st.spinner(f"Running OS Patching on {target_system}..."):
-                        time.sleep(2)
-                    st.success(f"Successfully applied patches! {target_system} is now compliant.")
-            
-            if selected_node['Cert Expiry (Days)'] < 30:
-                if st.button(f"🔒 Run check_cert_expiry.yml (Renew) on {target_system}"):
-                    with st.spinner(f"Renewing SSL profile via Ansible..."):
-                        time.sleep(2)
-                    st.success(f"Certificates renewed for {target_system}.")
+            if selected_node['Pending OS Patches'] > 0 or selected_node['Health Status'] == 'Critical':
+                if st.button(f"🚀 Run Remediation Playbook on {target_system}", type="primary"):
+                    
+                    with st.spinner(f"Executing Ansible on {target_system}..."):
+                        # 1. Format the target name (e.g. SAP-APP-05 to sap-app-05)
+                        container_name = target_system.lower()
+                        
+                        # 2. Build the Ansible CLI command
+                        ansible_cmd = f"ansible-playbook -i '{container_name},' remediate.yml"
+                        
+                        # 3. Execute the command and CAPTURE the output
+                        result = subprocess.run(ansible_cmd, shell=True, capture_output=True, text=True)
+                        
+                        # 4. Check if Ansible succeeded (Return code 0 means success)
+                        if result.returncode != 0:
+                            st.error("❌ Ansible Playbook Failed!")
+                            st.code(result.stderr or result.stdout, language='bash')
+                            st.stop() # Stop the script so we don't pretend it succeeded
+                        else:
+                            st.success(f"✅ Successfully remediated {target_system}!")
+                            with st.expander("View Ansible Execution Logs"):
+                                st.code(result.stdout, language='yaml')
+                        
+                        # 5. Re-sync the Docker state so the dashboard updates
+                        sync_docker_inventory()
+                        
+                    time.sleep(1.5)
+                    st.rerun()

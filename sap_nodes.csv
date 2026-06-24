@@ -2,6 +2,6 @@ System ID,Role,Cloud Provider,Health Status,Last Ansible Sync,Last Playbook Run,
 SAP-APP-05,App Server,Azure,Critical,Just now,Failed,35,-2
 SAP-APP-02,App Server,Azure,Healthy,Just now,Success,0,85
 SAP-PRD-01,HANA DB,AWS,Healthy,Just now,Success,0,120
-SAP-WEB-03,Web-Dispatcher,AWS,Warning,Just now,Success,12,25
-SAP-WEB-06,Web-Dispatcher,GCP,Critical,Just now,Failed,0,-15
-SAP-PRD-04,HANA DB,GCP,Warning,Just now,Success,5,40
+SAP-WEB-03,Web-Dispatcher,AWS,Warning,Just now,Success,24,25
+SAP-WEB-06,Web-Dispatcher,GCP,Healthy,Just now,Success,0,-15
+SAP-PRD-04,HANA DB,GCP,Healthy,Just now,Success,0,40
